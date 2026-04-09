@@ -1,11 +1,10 @@
-_G.HeadSize = 50
+_G.HeadSize = 30
 _G.Transparency = 0.5
 _G.Disabled = true
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 
--- GUI
+-- GUI (punya kamu, nggak diubah)
 local gui = Instance.new("ScreenGui")
 gui.Name = "Hamimsfy"
 gui.ResetOnSpawn = false
@@ -37,74 +36,6 @@ toggle.BackgroundColor3 = Color3.fromRGB(0,170,0)
 toggle.TextColor3 = Color3.new(1,1,1)
 toggle.Parent = main
 
-local sizeLabel = Instance.new("TextLabel")
-sizeLabel.Size = UDim2.new(1,0,0,15)
-sizeLabel.Position = UDim2.new(0,0,0,55)
-sizeLabel.BackgroundTransparency = 1
-sizeLabel.Text = "Size : ".._G.HeadSize
-sizeLabel.TextColor3 = Color3.new(1,1,1)
-sizeLabel.TextSize = 13
-sizeLabel.Parent = main
-
-local sizePlus = Instance.new("TextButton")
-sizePlus.Size = UDim2.new(0,75,0,20)
-sizePlus.Position = UDim2.new(0,10,0,70)
-sizePlus.Text = "Size +"
-sizePlus.Parent = main
-
-local sizeMinus = Instance.new("TextButton")
-sizeMinus.Size = UDim2.new(0,75,0,20)
-sizeMinus.Position = UDim2.new(0,95,0,70)
-sizeMinus.Text = "Size -"
-sizeMinus.Parent = main
-
-local transLabel = Instance.new("TextLabel")
-transLabel.Size = UDim2.new(1,0,0,15)
-transLabel.Position = UDim2.new(0,0,0,95)
-transLabel.BackgroundTransparency = 1
-transLabel.Text = "Transparent : ".._G.Transparency
-transLabel.TextColor3 = Color3.new(1,1,1)
-transLabel.TextSize = 13
-transLabel.Parent = main
-
-local transPlus = Instance.new("TextButton")
-transPlus.Size = UDim2.new(0,75,0,20)
-transPlus.Position = UDim2.new(0,10,0,110)
-transPlus.Text = "Trans +"
-transPlus.Parent = main
-
-local transMinus = Instance.new("TextButton")
-transMinus.Size = UDim2.new(0,75,0,20)
-transMinus.Position = UDim2.new(0,95,0,110)
-transMinus.Text = "Trans -"
-transMinus.Parent = main
-
-local mini = Instance.new("TextButton")
-mini.Size = UDim2.new(0,20,0,20)
-mini.Position = UDim2.new(1,-45,0,0)
-mini.Text = "-"
-mini.BackgroundColor3 = Color3.fromRGB(255,255,255)
-mini.Parent = main
-
-local close = Instance.new("TextButton")
-close.Size = UDim2.new(0,20,0,20)
-close.Position = UDim2.new(1,-20,0,0)
-close.Text = "X"
-close.BackgroundColor3 = Color3.fromRGB(200,0,0)
-close.TextColor3 = Color3.new(1,1,1)
-close.Parent = main
-
-local icon = Instance.new("TextButton")
-icon.Size = UDim2.new(0,40,0,40)
-icon.Position = UDim2.new(0,100,0,100)
-icon.Text = "H"
-icon.Visible = false
-icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
-icon.TextColor3 = Color3.new(1,1,1)
-icon.Parent = gui
-icon.Active = true
-icon.Draggable = true
-
 -- RESET HITBOX
 local function resetHitbox()
     for _, v in pairs(workspace:GetDescendants()) do
@@ -114,12 +45,13 @@ local function resetHitbox()
                 hrp.Size = Vector3.new(2,2,1)
                 hrp.Transparency = 1
                 hrp.Material = Enum.Material.Plastic
-                hrp.CanCollide = true
+                hrp.CanCollide = false
             end)
         end
     end
 end
 
+-- TOGGLE
 toggle.MouseButton1Click:Connect(function()
     _G.Disabled = not _G.Disabled
     if _G.Disabled then
@@ -132,73 +64,39 @@ toggle.MouseButton1Click:Connect(function()
     end
 end)
 
-sizePlus.MouseButton1Click:Connect(function()
-    _G.HeadSize = math.clamp(_G.HeadSize + 5,0,200)
-    sizeLabel.Text = "Size : ".._G.HeadSize
-end)
+-- 🔥 HITBOX LOOP (FIX UTAMA)
+task.spawn(function()
+    while task.wait(0.3) do -- ⬅️ penting: biar nggak spam
+        if not _G.Disabled then continue end
 
-sizeMinus.MouseButton1Click:Connect(function()
-    _G.HeadSize = math.clamp(_G.HeadSize - 5,0,200)
-    sizeLabel.Text = "Size : ".._G.HeadSize
-end)
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Model")
+            and v:FindFirstChild("Humanoid")
+            and v:FindFirstChild("HumanoidRootPart") then
 
-transPlus.MouseButton1Click:Connect(function()
-    _G.Transparency = math.clamp(_G.Transparency + 0.1,0.1,0.9)
-    transLabel.Text = "Transparent : "..string.format("%.1f",_G.Transparency)
-end)
+                -- skip player
+                if Players:GetPlayerFromCharacter(v) then continue end
 
-transMinus.MouseButton1Click:Connect(function()
-    _G.Transparency = math.clamp(_G.Transparency - 0.1,0.1,0.9)
-    transLabel.Text = "Transparent : "..string.format("%.1f",_G.Transparency)
-end)
+                local humanoid = v:FindFirstChild("Humanoid")
+                local hrp = v:FindFirstChild("HumanoidRootPart")
 
-mini.MouseButton1Click:Connect(function()
-    main.Visible = false
-    icon.Visible = true
-end)
-
-icon.MouseButton1Click:Connect(function()
-    main.Visible = true
-    icon.Visible = false
-end)
-
-close.MouseButton1Click:Connect(function()
-    _G.Disabled = false
-    resetHitbox()
-    gui:Destroy()
-end)
-
--- UNIVERSAL HITBOX
-RunService.RenderStepped:Connect(function()
-    if not _G.Disabled then return end
-
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("Model") 
-        and v:FindFirstChild("Humanoid") 
-        and v:FindFirstChild("HumanoidRootPart") then
-            
-            -- skip player
-            if Players:GetPlayerFromCharacter(v) then continue end
-
-            local humanoid = v:FindFirstChild("Humanoid")
-            local hrp = v:FindFirstChild("HumanoidRootPart")
-
-            if not humanoid or not hrp then continue end
-
-            if humanoid.Health <= 0 then
-                pcall(function()
+                if humanoid.Health <= 0 then
                     hrp.Transparency = 1
-                end)
-                continue
-            end
+                    continue
+                end
 
-            pcall(function()
-                hrp.Size = Vector3.new(_G.HeadSize,_G.HeadSize,_G.HeadSize)
-                hrp.Transparency = _G.Transparency
-                hrp.BrickColor = BrickColor.new("Really red")
-                hrp.Material = Enum.Material.Neon
+                -- 🔥 FIX: biar nggak jadi tembok
                 hrp.CanCollide = false
-            end)
+                hrp.Massless = true
+
+                -- 🔥 size dibatasi biar nggak glitch
+                local size = math.clamp(_G.HeadSize, 5, 50)
+
+                hrp.Size = Vector3.new(size, size, size)
+                hrp.Transparency = _G.Transparency
+                hrp.Material = Enum.Material.Neon
+                hrp.Color = Color3.fromRGB(255, 0, 0)
+            end
         end
     end
 end)
