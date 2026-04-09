@@ -1,164 +1,180 @@
-_G.HeadSize = 30
-_G.Transparency = 0.5
-_G.Disabled = true
+_G.BodySize = 30
+_G.BodyTransparency = 0.5
+_G.BodyEnabled = false
+
+_G.HeadSize = 20
+_G.HeadTransparency = 0.5
+_G.HeadEnabled = false
+
+_G.Running = true
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
--- GUI
-local gui = Instance.new("ScreenGui")
+-- ================= GUI =================
+local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "Hamimsfy"
 gui.ResetOnSpawn = false
-gui.Parent = game.CoreGui
 
-local main = Instance.new("Frame")
-main.Size = UDim2.new(0,180,0,160)
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0,200,0,260)
 main.Position = UDim2.new(0,100,0,100)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
-main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
-main.Parent = gui
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,0,0,20)
-title.BackgroundTransparency = 1
-title.Text = "Hamimsfy"
-title.TextColor3 = Color3.new(1,1,1)
-title.TextSize = 14
-title.Font = Enum.Font.SourceSansBold
-title.Parent = main
-
-local toggle = Instance.new("TextButton")
-toggle.Size = UDim2.new(0,160,0,25)
-toggle.Position = UDim2.new(0,10,0,25)
-toggle.Text = "ON"
-toggle.BackgroundColor3 = Color3.fromRGB(0,170,0)
-toggle.TextColor3 = Color3.new(1,1,1)
-toggle.Parent = main
-
--- SIZE
-local sizeLabel = Instance.new("TextLabel")
-sizeLabel.Size = UDim2.new(1,0,0,15)
-sizeLabel.Position = UDim2.new(0,0,0,55)
-sizeLabel.BackgroundTransparency = 1
-sizeLabel.Text = "Size : ".._G.HeadSize
-sizeLabel.TextColor3 = Color3.new(1,1,1)
-sizeLabel.TextSize = 13
-sizeLabel.Parent = main
-
-local sizePlus = Instance.new("TextButton")
-sizePlus.Size = UDim2.new(0,75,0,20)
-sizePlus.Position = UDim2.new(0,10,0,70)
-sizePlus.Text = "Size +"
-sizePlus.Parent = main
-
-local sizeMinus = Instance.new("TextButton")
-sizeMinus.Size = UDim2.new(0,75,0,20)
-sizeMinus.Position = UDim2.new(0,95,0,70)
-sizeMinus.Text = "Size -"
-sizeMinus.Parent = main
-
--- TRANSPARENCY
-local transLabel = Instance.new("TextLabel")
-transLabel.Size = UDim2.new(1,0,0,15)
-transLabel.Position = UDim2.new(0,0,0,95)
-transLabel.BackgroundTransparency = 1
-transLabel.Text = "Transparent : ".._G.Transparency
-transLabel.TextColor3 = Color3.new(1,1,1)
-transLabel.TextSize = 13
-transLabel.Parent = main
-
-local transPlus = Instance.new("TextButton")
-transPlus.Size = UDim2.new(0,75,0,20)
-transPlus.Position = UDim2.new(0,10,0,110)
-transPlus.Text = "Trans +"
-transPlus.Parent = main
-
-local transMinus = Instance.new("TextButton")
-transMinus.Size = UDim2.new(0,75,0,20)
-transMinus.Position = UDim2.new(0,95,0,110)
-transMinus.Text = "Trans -"
-transMinus.Parent = main
-
--- MINI & CLOSE
-local mini = Instance.new("TextButton")
-mini.Size = UDim2.new(0,20,0,20)
-mini.Position = UDim2.new(1,-45,0,0)
-mini.Text = "-"
-mini.BackgroundColor3 = Color3.fromRGB(255,255,255)
-mini.Parent = main
-
-local close = Instance.new("TextButton")
-close.Size = UDim2.new(0,20,0,20)
-close.Position = UDim2.new(1,-20,0,0)
-close.Text = "X"
-close.BackgroundColor3 = Color3.fromRGB(200,0,0)
-close.TextColor3 = Color3.new(1,1,1)
-close.Parent = main
-
--- ICON (minimize)
-local icon = Instance.new("TextButton")
+local icon = Instance.new("TextButton", gui)
 icon.Size = UDim2.new(0,40,0,40)
 icon.Position = UDim2.new(0,100,0,100)
 icon.Text = "H"
 icon.Visible = false
 icon.BackgroundColor3 = Color3.fromRGB(30,30,30)
 icon.TextColor3 = Color3.new(1,1,1)
-icon.Parent = gui
 icon.Active = true
 icon.Draggable = true
 
--- RESET
-local function resetHitbox()
-    for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") then
-            local hrp = v.HumanoidRootPart
-            pcall(function()
-                hrp.Size = Vector3.new(2,2,1)
-                hrp.Transparency = 1
-                hrp.Material = Enum.Material.Plastic
-                hrp.CanCollide = false
-            end)
-        end
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,20)
+title.BackgroundTransparency = 1
+title.Text = "Hamimsfy"
+title.TextColor3 = Color3.new(1,1,1)
+
+local mini = Instance.new("TextButton", main)
+mini.Size = UDim2.new(0,20,0,20)
+mini.Position = UDim2.new(1,-45,0,0)
+mini.Text = "-"
+
+local close = Instance.new("TextButton", main)
+close.Size = UDim2.new(0,20,0,20)
+close.Position = UDim2.new(1,-20,0,0)
+close.Text = "X"
+close.BackgroundColor3 = Color3.fromRGB(170,0,0)
+close.TextColor3 = Color3.new(1,1,1)
+
+local function label(text,y)
+    local l = Instance.new("TextLabel", main)
+    l.Size = UDim2.new(1,0,0,15)
+    l.Position = UDim2.new(0,0,0,y)
+    l.BackgroundTransparency = 1
+    l.TextColor3 = Color3.new(1,1,1)
+    l.Text = text
+    return l
+end
+
+local function btn(text,x,y)
+    local b = Instance.new("TextButton", main)
+    b.Size = UDim2.new(0,90,0,20)
+    b.Position = UDim2.new(0,x,0,y)
+    b.Text = text
+    return b
+end
+
+-- BODY UI
+local bodyToggle = Instance.new("TextButton", main)
+bodyToggle.Size = UDim2.new(0,180,0,25)
+bodyToggle.Position = UDim2.new(0,10,0,25)
+bodyToggle.Text = "BODY OFF"
+bodyToggle.BackgroundColor3 = Color3.fromRGB(170,0,0)
+
+local bodySizeLabel = label("Body Size : ".._G.BodySize,55)
+local bodyTransLabel = label("Body Trans : ".._G.BodyTransparency,90)
+
+local bPlus = btn("Size +",10,70)
+local bMinus = btn("Size -",100,70)
+local btPlus = btn("Trans +",10,105)
+local btMinus = btn("Trans -",100,105)
+
+-- HEAD UI
+local headToggle = Instance.new("TextButton", main)
+headToggle.Size = UDim2.new(0,180,0,25)
+headToggle.Position = UDim2.new(0,10,0,130)
+headToggle.Text = "HEAD OFF"
+headToggle.BackgroundColor3 = Color3.fromRGB(170,0,0)
+
+local headSizeLabel = label("Head Size : ".._G.HeadSize,160)
+local headTransLabel = label("Head Trans : ".._G.HeadTransparency,195)
+
+local hPlus = btn("Size +",10,175)
+local hMinus = btn("Size -",100,175)
+local htPlus = btn("Trans +",10,210)
+local htMinus = btn("Trans -",100,210)
+
+-- ================= RESET =================
+local function resetBody(v)
+    local hrp = v:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.Size = Vector3.new(2,2,1)
+        hrp.Transparency = 1
+        hrp.Material = Enum.Material.Plastic
+        hrp.CanCollide = false
     end
 end
 
--- TOGGLE
-toggle.MouseButton1Click:Connect(function()
-    _G.Disabled = not _G.Disabled
-    if _G.Disabled then
-        toggle.Text = "ON"
-        toggle.BackgroundColor3 = Color3.fromRGB(0,170,0)
-    else
-        toggle.Text = "OFF"
-        toggle.BackgroundColor3 = Color3.fromRGB(170,0,0)
-        resetHitbox()
+local function resetHead(v)
+    local head = v:FindFirstChild("Head")
+    if head then
+        head.Size = Vector3.new(2,1,1)
+        head.Transparency = 0
+        head.Material = Enum.Material.Plastic
+        head.CanCollide = false
     end
+end
+
+-- ================= TOGGLE =================
+bodyToggle.MouseButton1Click:Connect(function()
+    _G.BodyEnabled = not _G.BodyEnabled
+    bodyToggle.Text = _G.BodyEnabled and "BODY ON" or "BODY OFF"
+    bodyToggle.BackgroundColor3 = _G.BodyEnabled and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
 end)
 
--- SIZE BUTTON
-sizePlus.MouseButton1Click:Connect(function()
-    _G.HeadSize = math.clamp(_G.HeadSize + 5,5,50)
-    sizeLabel.Text = "Size : ".._G.HeadSize
+headToggle.MouseButton1Click:Connect(function()
+    _G.HeadEnabled = not _G.HeadEnabled
+    headToggle.Text = _G.HeadEnabled and "HEAD ON" or "HEAD OFF"
+    headToggle.BackgroundColor3 = _G.HeadEnabled and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
 end)
 
-sizeMinus.MouseButton1Click:Connect(function()
-    _G.HeadSize = math.clamp(_G.HeadSize - 5,5,50)
-    sizeLabel.Text = "Size : ".._G.HeadSize
+-- SIZE CONTROL
+bPlus.MouseButton1Click:Connect(function()
+    _G.BodySize = math.clamp(_G.BodySize+5,5,100)
+    bodySizeLabel.Text = "Body Size : ".._G.BodySize
 end)
 
--- TRANSPARENCY BUTTON
-transPlus.MouseButton1Click:Connect(function()
-    _G.Transparency = math.clamp(_G.Transparency + 0.1,0.1,0.9)
-    transLabel.Text = "Transparent : "..string.format("%.1f",_G.Transparency)
+bMinus.MouseButton1Click:Connect(function()
+    _G.BodySize = math.clamp(_G.BodySize-5,5,100)
+    bodySizeLabel.Text = "Body Size : ".._G.BodySize
 end)
 
-transMinus.MouseButton1Click:Connect(function()
-    _G.Transparency = math.clamp(_G.Transparency - 0.1,0.1,0.9)
-    transLabel.Text = "Transparent : "..string.format("%.1f",_G.Transparency)
+btPlus.MouseButton1Click:Connect(function()
+    _G.BodyTransparency = math.clamp(_G.BodyTransparency+0.1,0.1,0.9)
+    bodyTransLabel.Text = "Body Trans : "..string.format("%.1f",_G.BodyTransparency)
 end)
 
--- MINI
+btMinus.MouseButton1Click:Connect(function()
+    _G.BodyTransparency = math.clamp(_G.BodyTransparency-0.1,0.1,0.9)
+    bodyTransLabel.Text = "Body Trans : "..string.format("%.1f",_G.BodyTransparency)
+end)
+
+hPlus.MouseButton1Click:Connect(function()
+    _G.HeadSize = math.clamp(_G.HeadSize+5,5,100)
+    headSizeLabel.Text = "Head Size : ".._G.HeadSize
+end)
+
+hMinus.MouseButton1Click:Connect(function()
+    _G.HeadSize = math.clamp(_G.HeadSize-5,5,100)
+    headSizeLabel.Text = "Head Size : ".._G.HeadSize
+end)
+
+htPlus.MouseButton1Click:Connect(function()
+    _G.HeadTransparency = math.clamp(_G.HeadTransparency+0.1,0.1,0.9)
+    headTransLabel.Text = "Head Trans : "..string.format("%.1f",_G.HeadTransparency)
+end)
+
+htMinus.MouseButton1Click:Connect(function()
+    _G.HeadTransparency = math.clamp(_G.HeadTransparency-0.1,0.1,0.9)
+    headTransLabel.Text = "Head Trans : "..string.format("%.1f",_G.HeadTransparency)
+end)
+
+-- MINIMIZE
 mini.MouseButton1Click:Connect(function()
     main.Visible = false
     icon.Visible = true
@@ -169,43 +185,84 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
--- CLOSE
-close.MouseButton1Click:Connect(function()
-    _G.Disabled = false
-    resetHitbox()
-    gui:Destroy()
-end)
+-- ================= LOOP CONNECTION =================
+local bodyConnection
+local headConnection
 
--- HITBOX LOOP (FIX)
-task.spawn(function()
-    while task.wait(0.3) do
-        if not _G.Disabled then continue end
+bodyConnection = RunService.Heartbeat:Connect(function()
+    if not _G.Running then return end
 
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("Model")
-            and v:FindFirstChild("Humanoid")
-            and v:FindFirstChild("HumanoidRootPart") then
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") then
+            local humanoid = v:FindFirstChild("Humanoid")
+            local isPlayer = Players:GetPlayerFromCharacter(v) ~= nil
 
-                if Players:GetPlayerFromCharacter(v) then continue end
+            if not humanoid or humanoid.Health <= 0 then
+                resetBody(v)
+                continue
+            end
 
-                local humanoid = v:FindFirstChild("Humanoid")
+            if not _G.BodyEnabled then
+                resetBody(v)
+                continue
+            end
+
+            if not isPlayer then
                 local hrp = v:FindFirstChild("HumanoidRootPart")
-
-                if humanoid.Health <= 0 then
-                    hrp.Transparency = 1
-                    continue
+                if hrp then
+                    hrp.Size = Vector3.new(_G.BodySize,_G.BodySize,_G.BodySize)
+                    hrp.Transparency = _G.BodyTransparency
+                    hrp.Material = Enum.Material.Neon
+                    hrp.Color = Color3.fromRGB(255,150,0)
                 end
-
-                hrp.CanCollide = false
-                hrp.Massless = true
-
-                local size = math.clamp(_G.HeadSize,5,50)
-
-                hrp.Size = Vector3.new(size,size,size)
-                hrp.Transparency = _G.Transparency
-                hrp.Material = Enum.Material.Neon
-                hrp.Color = Color3.fromRGB(255,0,0)
             end
         end
     end
+end)
+
+headConnection = RunService.Heartbeat:Connect(function()
+    if not _G.Running then return end
+
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and v:FindFirstChild("Humanoid") and v:FindFirstChild("Head") then
+            local humanoid = v:FindFirstChild("Humanoid")
+
+            if not humanoid or humanoid.Health <= 0 then
+                resetHead(v)
+                continue
+            end
+
+            if not _G.HeadEnabled then
+                resetHead(v)
+                continue
+            end
+
+            local head = v:FindFirstChild("Head")
+            if head then
+                head.Size = Vector3.new(_G.HeadSize,_G.HeadSize,_G.HeadSize)
+                head.Transparency = _G.HeadTransparency
+                head.Material = Enum.Material.Neon
+                head.Color = Color3.fromRGB(255,0,0)
+            end
+        end
+    end
+end)
+
+-- ================= CLOSE FINAL =================
+close.MouseButton1Click:Connect(function()
+    _G.Running = false
+    _G.BodyEnabled = false
+    _G.HeadEnabled = false
+
+    if bodyConnection then bodyConnection:Disconnect() end
+    if headConnection then headConnection:Disconnect() end
+
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("Model") then
+            resetBody(v)
+            resetHead(v)
+        end
+    end
+
+    gui:Destroy()
 end)
