@@ -134,7 +134,7 @@ headToggle.MouseButton1Click:Connect(function()
     headToggle.BackgroundColor3 = _G.HeadEnabled and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
 end)
 
--- SIZE CONTROL (tetap sama)
+-- SIZE CONTROL
 bPlus.MouseButton1Click:Connect(function()
     _G.BodySize = math.clamp(_G.BodySize+5,5,100)
     bodySizeLabel.Text = "Body Size : ".._G.BodySize
@@ -191,26 +191,35 @@ RunService.Heartbeat:Connect(function()
     if not _G.Running then return end
 
     for _,v in pairs(workspace:GetDescendants()) do
-        if v:IsA("Model") and v:FindFirstChild("Humanoid") then
+        
+        if v:IsA("Model") then
             
+            local humanoid = v:FindFirstChildOfClass("Humanoid")
             local player = Players:GetPlayerFromCharacter(v)
 
-            -- ❌ SKIP DIRI SENDIRI
-            if player == LocalPlayer then
+            local isNPC = humanoid 
+                or v:FindFirstChild("AnimationController") 
+                or v:FindFirstChild("Head") 
+                or v:FindFirstChild("HumanoidRootPart")
+
+            if not isNPC then continue end
+
+            -- SKIP DIRI SENDIRI & PLAYER LAIN
+            if player then
                 resetBody(v)
                 resetHead(v)
                 continue
             end
 
-            local humanoid = v:FindFirstChild("Humanoid")
-            if not humanoid or humanoid.Health <= 0 then
+            -- DEAD CHECK
+            if humanoid and humanoid.Health <= 0 then
                 resetBody(v)
                 resetHead(v)
                 continue
             end
 
-            -- BODY
-            if _G.BodyEnabled and not player then
+            -- BODY (NPC ONLY)
+            if _G.BodyEnabled then
                 local hrp = v:FindFirstChild("HumanoidRootPart")
                 if hrp then
                     hrp.Size = Vector3.new(_G.BodySize,_G.BodySize,_G.BodySize)
@@ -222,7 +231,7 @@ RunService.Heartbeat:Connect(function()
                 resetBody(v)
             end
 
-            -- HEAD
+            -- HEAD (NPC ONLY)
             if _G.HeadEnabled then
                 local head = v:FindFirstChild("Head")
                 if head then
@@ -235,6 +244,7 @@ RunService.Heartbeat:Connect(function()
                 resetHead(v)
             end
         end
+
     end
 end)
 
