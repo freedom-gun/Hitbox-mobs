@@ -10,6 +10,7 @@ _G.Running = true
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
 
 -- ================= GUI =================
 local gui = Instance.new("ScreenGui", game.CoreGui)
@@ -133,7 +134,7 @@ headToggle.MouseButton1Click:Connect(function()
     headToggle.BackgroundColor3 = _G.HeadEnabled and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
 end)
 
--- SIZE CONTROL
+-- SIZE CONTROL (tetap sama)
 bPlus.MouseButton1Click:Connect(function()
     _G.BodySize = math.clamp(_G.BodySize+5,5,100)
     bodySizeLabel.Text = "Body Size : ".._G.BodySize
@@ -185,29 +186,31 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
--- ================= LOOP CONNECTION =================
-local bodyConnection
-local headConnection
-
-bodyConnection = RunService.Heartbeat:Connect(function()
+-- ================= LOOP =================
+RunService.Heartbeat:Connect(function()
     if not _G.Running then return end
 
     for _,v in pairs(workspace:GetDescendants()) do
-        if v:IsA("Model") and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") then
-            local humanoid = v:FindFirstChild("Humanoid")
-            local isPlayer = Players:GetPlayerFromCharacter(v) ~= nil
+        if v:IsA("Model") and v:FindFirstChild("Humanoid") then
+            
+            local player = Players:GetPlayerFromCharacter(v)
 
+            -- ❌ SKIP DIRI SENDIRI
+            if player == LocalPlayer then
+                resetBody(v)
+                resetHead(v)
+                continue
+            end
+
+            local humanoid = v:FindFirstChild("Humanoid")
             if not humanoid or humanoid.Health <= 0 then
                 resetBody(v)
+                resetHead(v)
                 continue
             end
 
-            if not _G.BodyEnabled then
-                resetBody(v)
-                continue
-            end
-
-            if not isPlayer then
+            -- BODY
+            if _G.BodyEnabled and not player then
                 local hrp = v:FindFirstChild("HumanoidRootPart")
                 if hrp then
                     hrp.Size = Vector3.new(_G.BodySize,_G.BodySize,_G.BodySize)
@@ -215,47 +218,31 @@ bodyConnection = RunService.Heartbeat:Connect(function()
                     hrp.Material = Enum.Material.Neon
                     hrp.Color = Color3.fromRGB(255,150,0)
                 end
+            else
+                resetBody(v)
+            end
+
+            -- HEAD
+            if _G.HeadEnabled then
+                local head = v:FindFirstChild("Head")
+                if head then
+                    head.Size = Vector3.new(_G.HeadSize,_G.HeadSize,_G.HeadSize)
+                    head.Transparency = _G.HeadTransparency
+                    head.Material = Enum.Material.Neon
+                    head.Color = Color3.fromRGB(255,0,0)
+                end
+            else
+                resetHead(v)
             end
         end
     end
 end)
 
-headConnection = RunService.Heartbeat:Connect(function()
-    if not _G.Running then return end
-
-    for _,v in pairs(workspace:GetDescendants()) do
-        if v:IsA("Model") and v:FindFirstChild("Humanoid") and v:FindFirstChild("Head") then
-            local humanoid = v:FindFirstChild("Humanoid")
-
-            if not humanoid or humanoid.Health <= 0 then
-                resetHead(v)
-                continue
-            end
-
-            if not _G.HeadEnabled then
-                resetHead(v)
-                continue
-            end
-
-            local head = v:FindFirstChild("Head")
-            if head then
-                head.Size = Vector3.new(_G.HeadSize,_G.HeadSize,_G.HeadSize)
-                head.Transparency = _G.HeadTransparency
-                head.Material = Enum.Material.Neon
-                head.Color = Color3.fromRGB(255,0,0)
-            end
-        end
-    end
-end)
-
--- ================= CLOSE FINAL =================
+-- CLOSE
 close.MouseButton1Click:Connect(function()
     _G.Running = false
     _G.BodyEnabled = false
     _G.HeadEnabled = false
-
-    if bodyConnection then bodyConnection:Disconnect() end
-    if headConnection then headConnection:Disconnect() end
 
     for _,v in pairs(workspace:GetDescendants()) do
         if v:IsA("Model") then
