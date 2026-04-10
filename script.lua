@@ -9,7 +9,6 @@ _G.HeadEnabled = false
 _G.Running = true
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 -- ================= GUI =================
@@ -107,7 +106,6 @@ local function resetBody(v)
         hrp.Size = Vector3.new(2,2,1)
         hrp.Transparency = 1
         hrp.Material = Enum.Material.Plastic
-        hrp.CanCollide = false
     end
 end
 
@@ -117,7 +115,6 @@ local function resetHead(v)
         head.Size = Vector3.new(2,1,1)
         head.Transparency = 0
         head.Material = Enum.Material.Plastic
-        head.CanCollide = false
     end
 end
 
@@ -186,65 +183,52 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
--- ================= LOOP =================
-RunService.Heartbeat:Connect(function()
-    if not _G.Running then return end
+-- ================= PROCESS =================
+local function process(v)
+    local humanoid = v:FindFirstChildOfClass("Humanoid")
+    local player = Players:GetPlayerFromCharacter(v)
 
-    for _,v in pairs(workspace:GetDescendants()) do
-        
-        if v:IsA("Model") then
-            
-            local humanoid = v:FindFirstChildOfClass("Humanoid")
-            local player = Players:GetPlayerFromCharacter(v)
+    if player then return end
 
-            local isNPC = humanoid 
-                or v:FindFirstChild("AnimationController") 
-                or v:FindFirstChild("Head") 
-                or v:FindFirstChild("HumanoidRootPart")
+    if humanoid and humanoid.Health <= 0 then
+        resetBody(v)
+        resetHead(v)
+        return
+    end
 
-            if not isNPC then continue end
+    local hrp = v:FindFirstChild("HumanoidRootPart")
+    local head = v:FindFirstChild("Head")
 
-            -- SKIP DIRI SENDIRI & PLAYER LAIN
-            if player then
-                resetBody(v)
-                resetHead(v)
-                continue
-            end
+    if hrp then
+        if _G.BodyEnabled then
+            hrp.Size = Vector3.new(_G.BodySize,_G.BodySize,_G.BodySize)
+            hrp.Transparency = _G.BodyTransparency
+            hrp.Material = Enum.Material.Neon
+        else
+            resetBody(v)
+        end
+    end
 
-            -- DEAD CHECK
-            if humanoid and humanoid.Health <= 0 then
-                resetBody(v)
-                resetHead(v)
-                continue
-            end
+    if head then
+        if _G.HeadEnabled then
+            head.Size = Vector3.new(_G.HeadSize,_G.HeadSize,_G.HeadSize)
+            head.Transparency = _G.HeadTransparency
+            head.Material = Enum.Material.Neon
+        else
+            resetHead(v)
+        end
+    end
+end
 
-            -- BODY (NPC ONLY)
-            if _G.BodyEnabled then
-                local hrp = v:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    hrp.Size = Vector3.new(_G.BodySize,_G.BodySize,_G.BodySize)
-                    hrp.Transparency = _G.BodyTransparency
-                    hrp.Material = Enum.Material.Neon
-                    hrp.Color = Color3.fromRGB(255,150,0)
-                end
-            else
-                resetBody(v)
-            end
-
-            -- HEAD (NPC ONLY)
-            if _G.HeadEnabled then
-                local head = v:FindFirstChild("Head")
-                if head then
-                    head.Size = Vector3.new(_G.HeadSize,_G.HeadSize,_G.HeadSize)
-                    head.Transparency = _G.HeadTransparency
-                    head.Material = Enum.Material.Neon
-                    head.Color = Color3.fromRGB(255,0,0)
-                end
-            else
-                resetHead(v)
+-- ================= SMART LOOP =================
+task.spawn(function()
+    while _G.Running do
+        for _,v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Model") then
+                process(v)
             end
         end
-
+        task.wait(0.5)
     end
 end)
 
