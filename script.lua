@@ -9,9 +9,12 @@ _G.HeadEnabled = false
 _G.Running = true
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- ================= GUI =================
+local targets = {}  -- Cache semua model yang diproses
+
+-- ================= GUI (sama) =================
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "Hamimsfy"
 gui.ResetOnSpawn = false
@@ -100,8 +103,8 @@ local htPlus = btn("Trans +",10,210)
 local htMinus = btn("Trans -",100,210)
 
 -- ================= RESET =================
-local function resetBody(v)
-    local hrp = v:FindFirstChild("HumanoidRootPart")
+local function resetBody(model)
+    local hrp = model:FindFirstChild("HumanoidRootPart")
     if hrp then
         hrp.Size = Vector3.new(2,2,1)
         hrp.Transparency = 1
@@ -109,8 +112,8 @@ local function resetBody(v)
     end
 end
 
-local function resetHead(v)
-    local head = v:FindFirstChild("Head")
+local function resetHead(model)
+    local head = model:FindFirstChild("Head")
     if head then
         head.Size = Vector3.new(2,1,1)
         head.Transparency = 0
@@ -118,7 +121,7 @@ local function resetHead(v)
     end
 end
 
--- ================= TOGGLE =================
+-- ================= TOGGLE & BUTTONS (sama) =================
 bodyToggle.MouseButton1Click:Connect(function()
     _G.BodyEnabled = not _G.BodyEnabled
     bodyToggle.Text = _G.BodyEnabled and "BODY ON" or "BODY OFF"
@@ -131,48 +134,40 @@ headToggle.MouseButton1Click:Connect(function()
     headToggle.BackgroundColor3 = _G.HeadEnabled and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
 end)
 
--- SIZE CONTROL
+-- Size controls sama...
 bPlus.MouseButton1Click:Connect(function()
     _G.BodySize = math.clamp(_G.BodySize+5,5,100)
     bodySizeLabel.Text = "Body Size : ".._G.BodySize
 end)
-
 bMinus.MouseButton1Click:Connect(function()
     _G.BodySize = math.clamp(_G.BodySize-5,5,100)
     bodySizeLabel.Text = "Body Size : ".._G.BodySize
 end)
-
 btPlus.MouseButton1Click:Connect(function()
     _G.BodyTransparency = math.clamp(_G.BodyTransparency+0.1,0.1,0.9)
     bodyTransLabel.Text = "Body Trans : "..string.format("%.1f",_G.BodyTransparency)
 end)
-
 btMinus.MouseButton1Click:Connect(function()
     _G.BodyTransparency = math.clamp(_G.BodyTransparency-0.1,0.1,0.9)
     bodyTransLabel.Text = "Body Trans : "..string.format("%.1f",_G.BodyTransparency)
 end)
-
 hPlus.MouseButton1Click:Connect(function()
     _G.HeadSize = math.clamp(_G.HeadSize+5,5,100)
     headSizeLabel.Text = "Head Size : ".._G.HeadSize
 end)
-
 hMinus.MouseButton1Click:Connect(function()
     _G.HeadSize = math.clamp(_G.HeadSize-5,5,100)
     headSizeLabel.Text = "Head Size : ".._G.HeadSize
 end)
-
 htPlus.MouseButton1Click:Connect(function()
     _G.HeadTransparency = math.clamp(_G.HeadTransparency+0.1,0.1,0.9)
     headTransLabel.Text = "Head Trans : "..string.format("%.1f",_G.HeadTransparency)
 end)
-
 htMinus.MouseButton1Click:Connect(function()
     _G.HeadTransparency = math.clamp(_G.HeadTransparency-0.1,0.1,0.9)
     headTransLabel.Text = "Head Trans : "..string.format("%.1f",_G.HeadTransparency)
 end)
 
--- MINIMIZE
 mini.MouseButton1Click:Connect(function()
     main.Visible = false
     icon.Visible = true
@@ -183,66 +178,93 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
--- ================= PROCESS =================
-local function process(v)
-    local humanoid = v:FindFirstChildOfClass("Humanoid")
-    local player = Players:GetPlayerFromCharacter(v)
+-- ================= OPTIMIZED PROCESS =================
+local function processModel(model)
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+    local player = Players:GetPlayerFromCharacter(model)
 
-    if player then return end
+    if player then return end  -- Skip player chars
 
     if humanoid and humanoid.Health <= 0 then
-        resetBody(v)
-        resetHead(v)
+        resetBody(model)
+        resetHead(model)
         return
     end
 
-    local hrp = v:FindFirstChild("HumanoidRootPart")
-    local head = v:FindFirstChild("Head")
+    local hrp = model:FindFirstChild("HumanoidRootPart")
+    local head = model:FindFirstChild("Head")
 
     if hrp then
         if _G.BodyEnabled then
-            hrp.Size = Vector3.new(_G.BodySize,_G.BodySize,_G.BodySize)
+            hrp.Size = Vector3.new(_G.BodySize, _G.BodySize, _G.BodySize)
             hrp.Transparency = _G.BodyTransparency
             hrp.Material = Enum.Material.Neon
         else
-            resetBody(v)
+            resetBody(model)
         end
     end
 
     if head then
         if _G.HeadEnabled then
-            head.Size = Vector3.new(_G.HeadSize,_G.HeadSize,_G.HeadSize)
+            head.Size = Vector3.new(_G.HeadSize, _G.HeadSize, _G.HeadSize)
             head.Transparency = _G.HeadTransparency
             head.Material = Enum.Material.Neon
         else
-            resetHead(v)
+            resetHead(model)
         end
     end
 end
 
--- ================= SMART LOOP =================
-task.spawn(function()
-    while _G.Running do
-        for _,v in pairs(workspace:GetDescendants()) do
-            if v:IsA("Model") then
-                process(v)
-            end
+-- ================= INITIAL SCAN & CACHE =================
+local function scanWorkspace()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") then
+            targets[obj] = true
         end
-        task.wait(0.5)
+    end
+end
+
+scanWorkspace()  -- Scan sekali awal
+
+-- ================= OPTIMIZED LOOP dengan Heartbeat =================
+local heartbeatConnection
+heartbeatConnection = RunService.Heartbeat:Connect(function()
+    if not _G.Running then
+        heartbeatConnection:Disconnect()
+        return
+    end
+
+    -- Update cache dengan perubahan baru (efisien)
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and not targets[obj] then
+            targets[obj] = true
+        end
+    end
+
+    -- Proses hanya model di cache
+    for model in pairs(targets) do
+        if model.Parent then  -- Masih ada
+            processModel(model)
+        else
+            targets[model] = nil  -- Cleanup hilang
+        end
     end
 end)
 
--- CLOSE
+-- ================= CLOSE =================
 close.MouseButton1Click:Connect(function()
     _G.Running = false
-    _G.BodyEnabled = false
-    _G.HeadEnabled = false
 
-    for _,v in pairs(workspace:GetDescendants()) do
-        if v:IsA("Model") then
-            resetBody(v)
-            resetHead(v)
+    -- Reset semua di cache
+    for model in pairs(targets) do
+        if model.Parent then
+            resetBody(model)
+            resetHead(model)
         end
+    end
+
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
     end
 
     gui:Destroy()
