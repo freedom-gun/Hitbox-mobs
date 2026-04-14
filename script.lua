@@ -12,9 +12,9 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
-local targets = {}  -- Cache semua model yang diproses
+local targets = {}  -- Cache semua model NPC yang diproses
 
--- ================= GUI (sama) =================
+-- ================= GUI =================
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "Hamimsfy"
 gui.ResetOnSpawn = false
@@ -124,7 +124,7 @@ local function resetHead(model)
     end
 end
 
--- ================= TOGGLE & BUTTONS (sama) =================
+-- ================= TOGGLE & BUTTONS =================
 bodyToggle.MouseButton1Click:Connect(function()
     _G.BodyEnabled = not _G.BodyEnabled
     bodyToggle.Text = _G.BodyEnabled and "BODY ON" or "BODY OFF"
@@ -237,16 +237,27 @@ local function processModel(model)
     processHead(model)
 end
 
--- ================= INITIAL SCAN & CACHE =================
-local function scanWorkspace()
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") then
-            targets[obj] = true
+-- ================= CACHE EVENTS (ONCE) =================
+local function onModelAdded(model)
+    if model:IsA("Model") then
+        local humanoid = model:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            targets[model] = true
         end
     end
 end
 
-scanWorkspace()  -- Scan sekali awal
+workspace.DescendantAdded:Connect(onModelAdded)
+workspace.DescendantRemoving:Connect(function(child)
+    if child:IsA("Model") then
+        targets[child] = nil
+    end
+end)
+
+-- Scan awal sekali untuk NPC yang sudah ada
+for _, obj in pairs(workspace:GetDescendants()) do
+    onModelAdded(obj)
+end
 
 -- ================= OPTIMIZED LOOP dengan Heartbeat =================
 local heartbeatConnection
@@ -254,13 +265,6 @@ heartbeatConnection = RunService.Heartbeat:Connect(function()
     if not _G.Running then
         heartbeatConnection:Disconnect()
         return
-    end
-
-    -- Update cache semua model di workspace dan turunannya
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and not targets[obj] then
-            targets[obj] = true
-        end
     end
 
     -- Proses hanya model di cache (yang masih ada)
