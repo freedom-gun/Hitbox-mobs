@@ -1,4 +1,4 @@
-_G.BodySize = 30
+_G.BodySize = 20
 _G.BodyTransparency = 0.5
 _G.BodyEnabled = false
 
@@ -179,21 +179,8 @@ icon.MouseButton1Click:Connect(function()
 end)
 
 -- ================= OPTIMIZED PROCESS =================
-local function processModel(model)
-    local humanoid = model:FindFirstChildOfClass("Humanoid")
-    local player = Players:GetPlayerFromCharacter(model)
-
-    if player then return end  -- Skip player chars
-
-    if humanoid and humanoid.Health <= 0 then
-        resetBody(model)
-        resetHead(model)
-        return
-    end
-
+local function processBody(model)
     local hrp = model:FindFirstChild("HumanoidRootPart")
-    local head = model:FindFirstChild("Head")
-
     if hrp then
         if _G.BodyEnabled then
             hrp.Size = Vector3.new(_G.BodySize, _G.BodySize, _G.BodySize)
@@ -202,8 +189,13 @@ local function processModel(model)
         else
             resetBody(model)
         end
+        return true
     end
+    return false
+end
 
+local function processHead(model)
+    local head = model:FindFirstChild("Head")
     if head then
         if _G.HeadEnabled then
             head.Size = Vector3.new(_G.HeadSize, _G.HeadSize, _G.HeadSize)
@@ -212,7 +204,24 @@ local function processModel(model)
         else
             resetHead(model)
         end
+        return true
     end
+    return false
+end
+
+local function processModel(model)
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+    local player = Players:GetPlayerFromCharacter(model)
+    
+    if player then return end
+    if humanoid and humanoid.Health <= 0 then
+        resetBody(model)
+        resetHead(model)
+        return
+    end
+    
+    processBody(model)
+    processHead(model)
 end
 
 -- ================= INITIAL SCAN & CACHE =================
