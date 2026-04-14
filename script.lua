@@ -105,10 +105,13 @@ local htMinus = btn("Trans -",100,210)
 -- ================= RESET =================
 local function resetBody(model)
     local hrp = model:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.Size = Vector3.new(2,2,1)
-        hrp.Transparency = 1
-        hrp.Material = Enum.Material.Plastic
+    local torso = model:FindFirstChild("Torso")
+    local bodyPart = hrp or torso
+
+    if bodyPart then
+        bodyPart.Size = Vector3.new(2,2,1)
+        bodyPart.Transparency = 1
+        bodyPart.Material = Enum.Material.Plastic
     end
 end
 
@@ -134,7 +137,7 @@ headToggle.MouseButton1Click:Connect(function()
     headToggle.BackgroundColor3 = _G.HeadEnabled and Color3.fromRGB(0,170,0) or Color3.fromRGB(170,0,0)
 end)
 
--- Size controls sama...
+-- Size controls
 bPlus.MouseButton1Click:Connect(function()
     _G.BodySize = math.clamp(_G.BodySize+5,5,100)
     bodySizeLabel.Text = "Body Size : ".._G.BodySize
@@ -179,13 +182,17 @@ icon.MouseButton1Click:Connect(function()
 end)
 
 -- ================= OPTIMIZED PROCESS =================
+local function getBodyPart(model)
+    return model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Torso")
+end
+
 local function processBody(model)
-    local hrp = model:FindFirstChild("HumanoidRootPart")
-    if hrp then
+    local bodyPart = getBodyPart(model)
+    if bodyPart then
         if _G.BodyEnabled then
-            hrp.Size = Vector3.new(_G.BodySize, _G.BodySize, _G.BodySize)
-            hrp.Transparency = _G.BodyTransparency
-            hrp.Material = Enum.Material.Neon
+            bodyPart.Size = Vector3.new(_G.BodySize, _G.BodySize, _G.BodySize)
+            bodyPart.Transparency = _G.BodyTransparency
+            bodyPart.Material = Enum.Material.Neon
         else
             resetBody(model)
         end
@@ -210,16 +217,22 @@ local function processHead(model)
 end
 
 local function processModel(model)
-    local humanoid = model:FindFirstChildOfClass("Humanoid")
+    -- Hanya kena NPC, bukan player asli
     local player = Players:GetPlayerFromCharacter(model)
-    
-    if player then return end
+    if player and player.Character == model then
+        return
+    end
+
+    local humanoid = model:FindFirstChildOfClass("Humanoid")
+
+    -- Jika NPC mati, reset dan buang dari cache
     if humanoid and humanoid.Health <= 0 then
         resetBody(model)
         resetHead(model)
+        targets[model] = nil
         return
     end
-    
+
     processBody(model)
     processHead(model)
 end
@@ -243,19 +256,19 @@ heartbeatConnection = RunService.Heartbeat:Connect(function()
         return
     end
 
-    -- Update cache dengan perubahan baru (efisien)
-    for _, obj in pairs(workspace:GetChildren()) do
+    -- Update cache semua model di workspace dan turunannya
+    for _, obj in pairs(workspace:GetDescendants()) do
         if obj:IsA("Model") and not targets[obj] then
             targets[obj] = true
         end
     end
 
-    -- Proses hanya model di cache
+    -- Proses hanya model di cache (yang masih ada)
     for model in pairs(targets) do
-        if model.Parent then  -- Masih ada
+        if model.Parent then
             processModel(model)
         else
-            targets[model] = nil  -- Cleanup hilang
+            targets[model] = nil
         end
     end
 end)
