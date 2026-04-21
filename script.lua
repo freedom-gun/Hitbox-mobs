@@ -80,6 +80,18 @@ mini.TextColor3 = Color3.new(1,1,1)
 local miniCorner = Instance.new("UICorner", mini)
 miniCorner.CornerRadius = UDim.new(0,4)
 
+-- Tombol V3 di kiri atas main
+local v3Button = Instance.new("TextButton", main)
+v3Button.Size = UDim2.new(0,40,0,20)
+v3Button.Position = UDim2.new(0,5,0,0) -- kiri atas, sedikit geser dari tepi
+v3Button.Text = "V3"
+v3Button.BackgroundColor3 = Color3.fromRGB(0,120,200)
+v3Button.TextColor3 = Color3.new(1,1,1)
+v3Button.Font = Enum.Font.GothamBold
+v3Button.TextSize = 12
+local v3Corner = Instance.new("UICorner", v3Button)
+v3Corner.CornerRadius = UDim.new(0,4)
+
 local close = Instance.new("TextButton", main)
 close.Size = UDim2.new(0,20,0,20)
 close.Position = UDim2.new(1,-20,0,0)
@@ -265,16 +277,49 @@ icon.MouseButton1Click:Connect(function()
     icon.Visible = false
 end)
 
-close.MouseButton1Click:Connect(function()
+-- Fungsi untuk reset/close semua V2
+local function CloseV2()
     _G.Running = false
+    _G.BodyEnabled = false
+    _G.HeadEnabled = false
+    _G.AimbotEnabled = false
+
+    -- reset semua model yang ada di cache
     for model,_ in pairs(targets) do
         if model.Parent then
             resetBody(model)
             resetHead(model)
         end
     end
-    if heartbeatConnection then heartbeatConnection:Disconnect() end
-    gui:Destroy()
+
+    -- matikan koneksi heartbeat (loop utama)
+    if heartbeatConnection then
+        heartbeatConnection:Disconnect()
+        heartbeatConnection = nil
+    end
+
+    -- hilangkan circle FOV kalau masih ada
+    if fovCircle then
+        fovCircle.Visible = false
+    end
+
+    -- hancurkan GUI V2
+    if gui then
+        gui:Destroy()
+    end
+end
+
+-- Tombol close lama pakai fungsi ini
+close.MouseButton1Click:Connect(function()
+    CloseV2()
+end)
+
+v3Button.MouseButton1Click:Connect(function()
+    -- 1. Tutup dan reset semua sistem V2
+    CloseV2()
+
+    -- 2. Load script V3
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/freedom-gun/V3/main/Script.lua"))()
 end)
 
 -- ================= HITBOX PROCESSING (UNIVERSAL, NON‑COLLIDING) =================
